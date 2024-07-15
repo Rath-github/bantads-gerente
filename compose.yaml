@@ -1,16 +1,45 @@
+version: '3'
+
 services:
   postgres:
-    image: 'postgres:latest'
+    container_name: postgres_gerente
+    image: postgres
     environment:
-      - 'POSTGRES_DB=mydatabase'
-      - 'POSTGRES_PASSWORD=secret'
-      - 'POSTGRES_USER=myuser'
+      POSTGRES_DB: bantads-gerente
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGDATA: /data/postgres
+    volumes:
+      - postgres:/data/postgres
     ports:
-      - '5432'
+      - "5437:5432"
+    networks:
+      - gerente-network
+    restart: always
+
+  gerente:
+    build: .
+    image: bantads_gerente
+    restart: on-failure
+    container_name: bantads_gerente_container
+    command: docker run -p 8080:8080 bantads_gerente
+    volumes:
+      - .:/app
+      - static_data:/app/static
+    networks:
+      - gerente-network
+      - rabbitmq
+    ports:
+      - "8380:8080"
+    depends_on:
+      - postgres
+
+volumes:
+  postgres:
+  static_data:
+
+networks:
+  gerente-network:
+    external: false
   rabbitmq:
-    image: 'rabbitmq:latest'
-    environment:
-      - 'RABBITMQ_DEFAULT_PASS=secret'
-      - 'RABBITMQ_DEFAULT_USER=myuser'
-    ports:
-      - '5672'
+    external: true
